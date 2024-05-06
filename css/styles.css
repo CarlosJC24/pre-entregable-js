@@ -19,7 +19,7 @@ a{
 
 /* NavBar*/
 .nav{
-    background-color: #407076;
+    background-color: purple;
     display: flex;
     justify-content: space-between;
     align-items: center;
