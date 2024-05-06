@@ -1,126 +1,232 @@
-let productos = [];
+//import components from navbar
+const btnNavMenuList = document.querySelector("#categorias");
+const navMenuList = document.querySelector(".nav-menu-list");
+const shoppingCardQty = document.querySelector(".nav-menu-sc-span");
+const navButtonAcusticas = document.querySelector("#nav-buttonAcusticas");
+const navButtonElectricas = document.querySelector("#nav-buttonElectricas");
+const navButtonAccesorios = document.querySelector("#nav-buttonAccesorios");
 
-fetch("./js/productos.json")
-    .then(response => response.json())
-    .then(data => {
-        productos = data;
-        cargarProductos(productos);
-    })
+//import html div to render producst
+const productRenderDiv = document.querySelector(".products")
+const productRenderShoppingCardDiv = document.querySelector(".shoppingCard-products")
 
+//import buttons from card in main page
+let buttonAddToCard = document.getElementsByClassName("card-shoppingCard-right-addButton");
 
-const contenedorProductos = document.querySelector("#contenedor-productos");
-const botonesCategorias = document.querySelectorAll(".boton-categoria");
-const tituloPrincipal = document.querySelector("#titulo-principal");
-let botonesAgregar = document.querySelectorAll(".producto-agregar");
-const numerito = document.querySelector("#numerito");
+//import components from shopping card
+const btnEpmtycard = document.querySelector("#products-shoppingCard-emptyCard");
+const totalShoppingCard = document.querySelector(".products-shoppingCard-total");
+const btnPay = document.querySelector(".shoppingCard-Pay");
 
+//events listeners
+btnNavMenuList.addEventListener("click", () => navMenuList.classList.toggle("visible"));
+btnEpmtycard.addEventListener("click", () => emptyCard());
+navButtonAcusticas.addEventListener("click", () => renderProducts("acustica"));
+navButtonElectricas.addEventListener("click", () => renderProducts("electrica"));
+navButtonAccesorios.addEventListener("click", () => renderProducts("accesorios"));
+btnPay.addEventListener("click", () => payBill());
+//Import database
+const productos = '/js/db.json';
 
-botonesCategorias.forEach(boton => boton.addEventListener("click", () => {
-    aside.classList.remove("aside-visible");
-}))
-
-
-function cargarProductos(productosElegidos) {
-
-    contenedorProductos.innerHTML = "";
-
-    productosElegidos.forEach(producto => {
-
-        const div = document.createElement("div");
-        div.classList.add("producto");
-        div.innerHTML = `
-            <img class="producto-imagen" src="${producto.imagen}" alt="${producto.titulo}">
-            <div class="producto-detalles">
-                <h3 class="producto-titulo">${producto.titulo}</h3>
-                <p class="producto-precio">$${producto.precio}</p>
-                <button class="producto-agregar" id="${producto.id}">Agregar</button>
-            </div>
-        `;
-
-        contenedorProductos.append(div);
-    })
-
-    actualizarBotonesAgregar();
+//Rendering dataBase in HTML with a for
+async function getData() {
+    const res = await fetch(productos);
+    const data = await res.json();
+    return data;
 }
 
-
-botonesCategorias.forEach(boton => {
-    boton.addEventListener("click", (e) => {
-
-        botonesCategorias.forEach(boton => boton.classList.remove("active"));
-        e.currentTarget.classList.add("active");
-
-        if (e.currentTarget.id != "todos") {
-            const productoCategoria = productos.find(producto => producto.categoria.id === e.currentTarget.id);
-            tituloPrincipal.innerText = productoCategoria.categoria.nombre;
-            const productosBoton = productos.filter(producto => producto.categoria.id === e.currentTarget.id);
-            cargarProductos(productosBoton);
-        } else {
-            tituloPrincipal.innerText = "Todos los productos";
-            cargarProductos(productos);
-        }
-
-    })
-});
-
-function actualizarBotonesAgregar() {
-    botonesAgregar = document.querySelectorAll(".producto-agregar");
-
-    botonesAgregar.forEach(boton => {
-        boton.addEventListener("click", agregarAlCarrito);
-    });
-}
-
-let productosEnCarrito;
-
-let productosEnCarritoLS = localStorage.getItem("productos-en-carrito");
-
-if (productosEnCarritoLS) {
-    productosEnCarrito = JSON.parse(productosEnCarritoLS);
-    actualizarNumerito();
-} else {
-    productosEnCarrito = [];
-}
-
-function agregarAlCarrito(e) {
-
-    Toastify({
-        text: "Producto agregado",
-        duration: 3000,
-        close: true,
-        gravity: "top", 
-        position: "right", 
-        stopOnFocus: true, 
-        style: {
-          background: "linear-gradient(to right, #4b33a8, #785ce9)",
-          borderRadius: "2rem",
-          textTransform: "uppercase",
-          fontSize: ".75rem"
-        },
-        offset: {
-            x: '1.5rem', 
-            y: '1.5rem', 
-          },
-        onClick: function(){} 
-      }).showToast();
-
-    const idBoton = e.currentTarget.id;
-    const productoAgregado = productos.find(producto => producto.id === idBoton);
-
-    if(productosEnCarrito.some(producto => producto.id === idBoton)) {
-        const index = productosEnCarrito.findIndex(producto => producto.id === idBoton);
-        productosEnCarrito[index].cantidad++;
+//Rendering all products in index.html
+async function renderProducts(filter) {
+    const dataBase = await getData()
+    let filterDB = "";
+    if (!filter) {
+        filterDB = dataBase
     } else {
-        productoAgregado.cantidad = 1;
-        productosEnCarrito.push(productoAgregado);
+        filterDB = dataBase.filter(product => product.category == filter);
     }
-
-    actualizarNumerito();
-
-    localStorage.setItem("productos-en-carrito", JSON.stringify(productosEnCarrito));
+    productRenderDiv.innerHTML = "";
+    filterDB.forEach(producto => {
+        productRenderDiv.innerHTML += `<div class="card">
+        <img src=${producto.img} alt="">
+            <div class="card-text">
+                <p class="card-text-category">${producto.category}</p>
+                <h3 class="card-text-title">${producto.title}</h3>
+                <p class="card-text-description">${producto.description}</p>
+                <div class="card-button">
+                    <p class="card-button-price">$${producto.price}</p>
+                    <div class="card-button-right">
+                        <button class="card-button-right-addButton" id=${producto.id}>Agregar al Carrito</button>                    
+                    </div>
+                </div>
+            </div>
+        </div>
+        `
+    });
+    buttonsFunctions();
+    renderShoppingCardProducts()
 }
 
-function actualizarNumerito() {
-    let nuevoNumerito = productosEnCarrito.reduce((acc, producto) => acc + producto.cantidad, 0);
-    numerito.innerText = nuevoNumerito;
+window.onload = renderProducts();
+
+//Adding function to buttons
+function buttonsFunctions() {
+    buttonAddToCard = document.querySelectorAll(".card-button-right-addButton");
+    buttonAddToCard.forEach(ele => ele.addEventListener("click", addTocard));
+}
+
+//Shopping Card functions
+let shoppingCard;
+const shoppingCardStorage = JSON.parse(localStorage.getItem('SC'));
+if (shoppingCardStorage) {
+    shoppingCard = shoppingCardStorage;
+    shoppingCardQtyRender()
+} else {
+    shoppingCard = [];
+}
+
+// show total items card in navbar
+function shoppingCardQtyRender() {
+    shoppingCardQty.textContent = shoppingCard.map(ele => ele.qty).reduce((a, b) => a + b, 0);
+}
+
+//add items to card
+async function addTocard(e) {
+    const buttonId = e.currentTarget.id;
+    const dataBase = await getData();
+    const exist = shoppingCard.some(ele => ele.id === Number(buttonId))
+    if (exist) {
+        const index = shoppingCard.findIndex(ele => ele.id === Number(buttonId))
+        shoppingCard[index].qty++;
+    } else {
+        const productToAdd = dataBase.find(ele => ele.id === Number(buttonId));
+        productToAdd.qty = 1;
+        shoppingCard.push(productToAdd);
+    }
+    localStorage.setItem('SC', JSON.stringify(shoppingCard));
+    shoppingCardQtyRender();
+    renderShoppingCardProducts()
+}
+
+//empty shopping card
+function emptyCard() {
+    shoppingCard = [];
+    localStorage.setItem("SC", JSON.stringify(shoppingCard));
+    shoppingCardQtyRender()
+    renderShoppingCardProducts()
+}
+
+//Rendering card products in Shopping Card .html
+function renderShoppingCardProducts() {
+    productRenderShoppingCardDiv.innerHTML = "";
+    shoppingCard.forEach(product =>
+        productRenderShoppingCardDiv.innerHTML += `
+        <div class="shoppingCard-card">
+            <img src="${product.img}" class="shoppingCard-card-img"/>
+            <div class="shoppingCard-card-right">
+                <div class="shoppingCard-card-right-text">
+                <div>${product.title}</div>
+                <div>${product.price}</div>
+                </div>
+                <div class="shoppingCard-card-right-buttons">
+                    <div class="shoppingCard-card-right-buttons-items">
+                        <button class="card-shoppingCard-right-lessButton" id="${product.id}">-</button>
+                        <p class="card-shoppingCard-right-input" type="number" min="0" id="${product.id}">${product.qty}</p>
+                        <button class="card-shoppingCard-right-plusButton" id="${product.id}">+</button>
+                    </div>
+                    <div>
+                        <button class="card-shoppingCard-right-delete" id="${product.id}">Eliminar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `
+    )
+    addfunctionSCbuttons()
+    paymentTotal()
+}
+
+//adding functions to shopping card buttons
+function addfunctionSCbuttons() {
+    const buttonsPlus = document.querySelectorAll(".card-shoppingCard-right-plusButton");
+    const buttonsLess = document.querySelectorAll(".card-shoppingCard-right-lessButton");
+    const buttonsDelete = document.querySelectorAll(".card-shoppingCard-right-delete");
+    buttonsPlus.forEach(button => button.addEventListener("click", plusSC));
+    buttonsLess.forEach(button => button.addEventListener("click", lessSC));
+    buttonsDelete.forEach(button => button.addEventListener("click", deleteProduct));
+}
+
+function plusSC(e) {
+    const id = e.currentTarget.id;
+    const productos = shoppingCard;
+    const index = shoppingCard.findIndex(ele => ele.id == id);
+    const input = document.querySelectorAll(".card-shoppingCard-right-input");
+    const inputArray = Array.prototype.slice.call(input);
+    const indexInputArray = inputArray.find(ele => ele.id == id);
+    indexInputArray.textContent = productos[index].qty += 1;
+    localStorage.setItem("SC", JSON.stringify(shoppingCard));
+    paymentTotal();
+    shoppingCardQtyRender();
+}
+
+function lessSC(e) {
+    const id = e.currentTarget.id;
+    const productos = shoppingCard;
+    const index = shoppingCard.findIndex(ele => ele.id == id);
+    const input = document.querySelectorAll(".card-shoppingCard-right-input");
+    const inputArray = Array.prototype.slice.call(input);
+    const indexInputArray = inputArray.find(ele => ele.id == id);
+    indexInputArray.textContent = productos[index].qty -= 1;
+    if (shoppingCard[index].qty == 0) {
+        deleteProduct(e);
+    }
+    localStorage.setItem("SC", JSON.stringify(shoppingCard));
+    paymentTotal();
+    shoppingCardQtyRender();
+}
+
+function deleteProduct(e) {
+        const id = e.currentTarget.id;
+        const productos = shoppingCard;
+        const index = productos.findIndex(ele => ele.id == id);
+        shoppingCard.splice(index, 1);
+        localStorage.setItem("SC", JSON.stringify(shoppingCard));
+        renderShoppingCardProducts()
+        paymentTotal();
+}
+
+//total mount shopping card
+function paymentTotal() {
+    totalShoppingCard.textContent = shoppingCard.map(ele => ele.price * ele.qty).reduce((a, b) => a + b, 0).toLocaleString("es");
+}
+
+function payBill() {
+    let totalShoppingCardPayment = shoppingCard.map(ele => ele.price * ele.qty).reduce((a, b) => a + b, 0).toLocaleString("es");
+    if (totalShoppingCard == 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: 'Tu carrito esta vacio, agrega productos para poder realizar una compra',
+            timer: 2000
+        })
+    } else {
+        Swal.fire({
+            title: 'Total a pagar',
+            text: `El total de tu compra es CLP ${totalShoppingCardPayment}`,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Relizar pago'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Compra realizada con exito',
+                    text: 'Muchas gracias por tu compra!',
+                    timer: 2000
+                })
+                setTimeout(() => emptyCard(), 1000)
+            }
+        })
+    }
 }
