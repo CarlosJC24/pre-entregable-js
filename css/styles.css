@@ -9,12 +9,24 @@ html, * {
     box-sizing: inherit;
   }
 
+main{
+    background: url(../assets/img/Fondo.jpg);
+    background-size: cover;
+    background-attachment:fixed;
+
+}
+
 .wrapper{
     background-color: rgb(235, 235, 235);
 }
 
+h1{
+    font-family: Arial, Helvetica, sans-serif;
+}
+
 a{
     text-decoration: none;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 /* NavBar*/
@@ -82,6 +94,7 @@ a{
     grid-template-columns: repeat(4, 1fr);
     justify-items: center;    
     margin: 0 3rem;
+    
 }
 
 .products > .card{
@@ -92,7 +105,7 @@ a{
 .card{
     max-width: 20rem;
     border: 0.5px solid gray;
-    background-color: white;
+    background-color: #E8DDE1;
 }
 
 .card > img{
@@ -184,7 +197,7 @@ a{
 }
 
 .shoppingCard-card-right-buttons-items > *{
-    margin: 0 0.25rem;
+    margin: 0 0.20rem;
 }
 
 .card-shoppingCard-right-input{
